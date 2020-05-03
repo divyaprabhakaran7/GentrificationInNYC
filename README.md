@@ -7,4 +7,4 @@ The Centers for Disease Control and Prevention defines gentrification as “the 
 
 Using New York City Neighborhood Data Profiles from New York University’s Furman Center, we will compile data on demographics, income per household, average housing costs, and construction permits in each New York City zip code over the course of several years. With this information along with statistics from previously gentrified neighborhoods, we aim to apply machine learning techniques to build a gentrification predictor so you can see if you should soon be expecting changes to sweep across your New York City neighborhood. We have produced data representations so you can clearly visualize gentrification predictions across New York City neighborhoods.
 
-Instructions on how to run the project located in Wiki.
+Link to Medium Blogpost and instructions on how to run the project located in Wiki.
