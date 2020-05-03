@@ -271,10 +271,9 @@ prediction_gent = svclassifier.predict_proba(demographics)
 gentrified_ar = []    # create an array to store the probability
 for i in prediction_gent:
    gentrified_ar.append(i[0])
-   print(i[0])
 
 import matplotlib.pyplot as plt1
 plt1.hist(gentrified_ar)
-plt1.title ("Visualize")
-plt1.show()
+plt1.title ("Visualize Probabilities of Gentrification Across NY")
+plt1.show();
 
