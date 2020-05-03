@@ -3,7 +3,7 @@ import pandas as pd
 
 demographics = pd.DataFrame()
 training = pd.DataFrame()
-
+gentrified = pd.DataFrame()
 
 brooklyn_xlsx = [f for f in os.listdir("BK/") if f[-4:] == 'xlsx']
 brooklyn = pd.DataFrame()
@@ -22,6 +22,10 @@ bronxt_xlsx = [f for f in os.listdir("BXT/") if f[-4:] == 'xlsx']
 bronxt = pd.DataFrame()
 mant_xlsx = [f for f in os.listdir("MNT/") if f[-4:] == 'xlsx']
 mant = pd.DataFrame()
+brooklyng_xlsx = [f for f in os.listdir("BKG/") if f[-4:] == 'xlsx']
+brooklyng = pd.DataFrame()
+bronxg_xlsx = [f for f in os.listdir("BXG/") if f[-4:] == 'xlsx']
+bronxg = pd.DataFrame()
 
 
 # Brooklyn files
@@ -68,8 +72,26 @@ bkt_permits = brooklynt[brooklynt["Indicator"] == "Units authorized by new resid
 training = training.append([bkt_asian, bkt_black, bkt_hispanic, 
     bkt_white, bkt_poverty, bkt_income, bkt_permits])
 
+for file in brooklyng_xlsx:
+    data = pd.ExcelFile("BKG/%s" % file)
+    sheet2 = pd.read_excel(data, 1) #extracting only sheet with data
+    brooklyng = brooklyng.append(sheet2)
 
+bkg_asian = brooklyng[brooklyng["Indicator"] == "Percent Asian"]
 
+bkg_black = brooklyng[brooklyng["Indicator"] == "Percent black"]
+bkg_hispanic = brooklyng[brooklyng["Indicator"] == "Percent Hispanic"]
+bkg_white = brooklyng[brooklyng["Indicator"] == "Percent white"]
+#Poverty rate
+bkg_poverty = brooklyng[brooklyng["Indicator"] == "Poverty rate"]
+#Household income
+bkg_income = brooklyng[brooklyng["Indicator"] == "Median household income (2018$)"]
+
+#Units authorized by new building permits
+bkg_permits = brooklyng[brooklyng["Indicator"] == "Units authorized by new residential building permits"]
+
+gentrified = gentrified.append([bkg_asian, bkg_black, bkg_hispanic, 
+    bkg_white, bkg_poverty, bkg_income, bkg_permits])
 
 # Bronx files
 for file in bronx_xlsx:
@@ -111,6 +133,29 @@ bxt_permits = bronxt[bronxt["Indicator"] == "Units authorized by new residential
 
 training = training.append([bxt_asian, bxt_black, bxt_hispanic, 
     bxt_white, bxt_poverty, bxt_income, bxt_permits])
+
+#Bronx Training Data
+for file in bronxg_xlsx:
+    data = pd.ExcelFile("BXG/%s" % file)
+    sheet2 = pd.read_excel(data, 1) #extracting only sheet with data
+    bronxg = bronxg.append(sheet2)
+    
+bxg_asian = bronxg[bronxg["Indicator"] == "Percent Asian"]
+
+bxg_black = bronxg[bronxg["Indicator"] == "Percent black"]
+
+bxg_hispanic = bronxg[bronxg["Indicator"] == "Percent Hispanic"]
+bxg_white = bronxg[bronxg["Indicator"] == "Percent white"]
+#Poverty rate
+bxg_poverty = bronxg[bronxg["Indicator"] == "Poverty rate"]
+
+#Household income
+bxg_income = bronxg[bronxg["Indicator"] == "Median household income (2018$)"]
+#Units authorized by new building permits
+bxg_permits = bronxg[bronxg["Indicator"] == "Units authorized by new residential building permits"]
+
+gentrified = gentrified.append([bxg_asian, bxg_black, bxg_hispanic, 
+    bxg_white, bxg_poverty, bxg_income, bxg_permits])
 
 # Manhattan files
 for file in man_xlsx:
@@ -185,41 +230,51 @@ demographics = demographics.append([si_asian, si_black, si_hispanic, si_white, s
     si_income, si_permits])
 
 
-cols = [1,2,3,4,6,7, 8,10,11,12,13] #columns irrelevant to analysis
+cols = [0, 1,2,3,4,6,7, 8,10,11,12,13] #columns irrelevant to analysis
 demographics = demographics.drop(demographics.columns[cols],axis=1) #removing irrelevant column
 training = training.drop(training.columns[cols], axis = 1)
+gentrified = gentrified.drop(gentrified.columns[cols], axis = 1)
 #removing symbols
 demographics[2000] = demographics[2000].map(lambda x: x.lstrip('$').rstrip('%'))
 demographics[2018] = demographics[2018].map(lambda x: x.lstrip('$').rstrip('%'))
+gentrified[2000] = gentrified[2000].map(lambda x: x.lstrip('$').rstrip('%'))
+gentrified[2018] = gentrified[2018].map(lambda x: x.lstrip('$').rstrip('%'))
+gentrified['Label'] = 0
 training[2000] = training[2000].map(lambda x: x.lstrip('$').rstrip('%'))
 training[2018] = training[2018].map(lambda x: x.lstrip('$').rstrip('%'))
+training['Label'] = 1
 demographics = demographics.replace(',','', regex=True)
 training = training.replace(',','', regex=True)
+gentrified = gentrified.replace(',','', regex=True)
 #converting data frames to floats
 demographics[2000] = demographics[2000].astype(float)
 demographics[2018] = demographics[2018].astype(float)
 training[2000] = training[2000].astype(float)
 training[2018] = training[2018].astype(float)
+gentrified[2000] = gentrified[2000].astype(float)
+gentrified[2018] = gentrified[2018].astype(float)
 
+#concat non-gentrified/gentrified training data
+frames = [gentrified, training]
+merge = pd.concat(frames)
 
-#Bernoulli Classifier
-#from sklearn.naive_bayes import BernoulliNB
-#model = BernoulliNB()
-#model.fit(matrix, target array) 
-#model.fit(training, all_boroughs) 
+#SVM classifier
+x = merge.drop('Label', axis = 1)
+y = merge['Label']
 from sklearn.svm import SVC
-svclassifier = SVC(kernel='poly', degree=7)
-svclassifier.fit(training, demographics)
-#from sklearn import svm 
-#SVM = svm.LinearSVC()
-#SVM.fit(training, demographics)
-
-
+svclassifier = SVC(kernel='linear', probability = True)
+svclassifier.fit(x,y)
+y_pred = svclassifier.predict(demographics)
 
 #model.predict(training) for datapoint predictions 
-prediction_gent = model.predict_proba(training) 
-gentrified = []    # create an array to store the probability
+prediction_gent = svclassifier.predict_proba(demographics) 
+gentrified_ar = []    # create an array to store the probability
 for i in prediction_gent:
-   gentrified.append(i[0])
+   gentrified_ar.append(i[0])
+   print(i[0])
 
+import matplotlib.pyplot as plt1
+plt1.hist(gentrified_ar)
+plt1.title ("Visualize")
+plt1.show()
 
